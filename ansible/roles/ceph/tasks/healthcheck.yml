@@ -1,0 +1,19 @@
+- name: Wait for Ceph cluster to be healthy
+  shell: ceph health
+  register: ceph_health
+  until: ceph_health.stdout == "HEALTH_OK"
+  retries: 30
+  delay: 10
+  when: inventory_hostname in groups['ceph_mon']
+
+- name: Verify Ceph pool creation
+  shell: ceph osd pool ls | grep {{ ceph_pool_name }}
+  register: pool_check
+  failed_when: pool_check.rc != 0
+  when: inventory_hostname in groups['ceph_mon']
+
+- name: Check Ceph client permissions
+  shell: ceph auth get client.incus
+  register: client_check
+  failed_when: client_check.rc != 0
+  when: inventory_hostname in groups['ceph_mon'] 

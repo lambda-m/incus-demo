@@ -1,0 +1,7 @@
+- name: Install Ceph packages
+  apt:
+    name:
+      - ceph
+      - ceph-common
+      - ceph-mgr
+    state: present

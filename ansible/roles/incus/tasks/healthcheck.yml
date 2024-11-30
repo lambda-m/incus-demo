@@ -1,0 +1,17 @@
+- name: Verify Incus cluster status
+  shell: incus cluster list
+  register: cluster_status
+  failed_when: cluster_status.rc != 0
+  when: inventory_hostname == groups['incus_nodes'][0]
+
+- name: Check Incus storage pool
+  shell: incus storage show {{ incus_storage_backend }}
+  register: storage_status
+  failed_when: storage_status.rc != 0
+  when: inventory_hostname == groups['incus_nodes'][0]
+
+- name: Verify all nodes are online
+  shell: incus cluster list --format csv | grep -c Online
+  register: online_nodes
+  failed_when: online_nodes.stdout|int != groups['incus_nodes']|length
+  when: inventory_hostname == groups['incus_nodes'][0] 

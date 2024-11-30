@@ -1,0 +1,14 @@
+[incus_nodes]
+node1
+node2
+node3
+node4
+
+[ceph_mon]
+node1
+
+[ceph_mgr]
+node1
+
+[ceph_osd]
+node1

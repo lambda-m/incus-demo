@@ -1,0 +1,29 @@
+- name: Initialize Incus cluster on primary node
+  shell: |
+    incus admin init --auto
+    incus cluster init --auto
+  args:
+    creates: /var/lib/incus/cluster.crt
+  when: inventory_hostname == groups['incus_nodes'][0]
+
+- name: Get cluster join token
+  shell: incus cluster add {{ inventory_hostname }} --generate-cert
+  register: cluster_join
+  when: inventory_hostname == groups['incus_nodes'][0]
+
+- name: Join other nodes to cluster
+  shell: "{{ hostvars[groups['incus_nodes'][0]]['cluster_join']['stdout'] }}"
+  when: 
+    - inventory_hostname != groups['incus_nodes'][0]
+    - inventory_hostname in groups['incus_nodes']
+
+- name: Configure Ceph storage
+  shell: |
+    incus storage create {{ incus_storage_backend }} ceph \
+      source={{ ceph_pool_name }} \
+      ceph.cluster_name=ceph \
+      ceph.user.name=incus \
+      ceph.cluster_name=ceph
+  args:
+    creates: /var/lib/incus/storage-pools/{{ incus_storage_backend }}
+  when: inventory_hostname == groups['incus_nodes'][0]

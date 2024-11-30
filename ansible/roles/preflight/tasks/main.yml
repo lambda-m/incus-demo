@@ -1,0 +1,51 @@
+- name: Verify minimum RAM
+  assert:
+    that:
+      - ansible_memtotal_mb >= 4096
+    msg: "Minimum 4GB RAM required"
+
+- name: Verify Ubuntu version
+  assert:
+    that:
+      - ansible_distribution == "Ubuntu"
+      - ansible_distribution_version is version('22.04', '>=')
+    msg: "Ubuntu 22.04 or higher is required"
+
+- name: Verify storage device exists
+  stat:
+    path: "{{ ceph_osd_device }}"
+  register: device_check
+
+- name: Fail if storage device doesn't exist
+  fail:
+    msg: "Required storage device {{ ceph_osd_device }} not found"
+  when: not device_check.stat.exists 
+
+- name: Check SSH connectivity
+  ping:
+
+- name: Check Python is available
+  raw: which python3
+  register: python_check
+  changed_when: false
+  failed_when: python_check.rc != 0
+
+- name: Ensure required disk space is available
+  shell: df -h / | awk 'NR==2 {print $4}' | sed 's/G//'
+  register: disk_space
+  changed_when: false
+  failed_when: disk_space.stdout|float < 10.0
+
+- name: Check if OSD device exists
+  stat:
+    path: "{{ ceph_osd_device }}"
+  register: osd_device
+  when: inventory_hostname in groups['ceph_osd']
+  failed_when: not osd_device.stat.exists
+
+- name: Verify network connectivity between nodes
+  wait_for:
+    host: "{{ hostvars[item]['ansible_host'] }}"
+    port: 22
+    timeout: 5
+  with_items: "{{ groups['incus_nodes'] }}"

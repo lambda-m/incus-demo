@@ -1,0 +1,59 @@
+- hosts: incus_nodes
+  tasks:
+    - name: Remove Incus storage pools
+      shell: incus storage delete {{ incus_storage_backend }}
+      ignore_errors: yes
+      when: inventory_hostname == groups['incus_nodes'][0]
+
+    - name: Leave Incus cluster
+      shell: incus cluster remove {{ inventory_hostname }}
+      ignore_errors: yes
+      when: inventory_hostname != groups['incus_nodes'][0]
+
+- hosts: ceph_mon
+  tasks:
+    - name: Remove Ceph pools
+      shell: ceph osd pool rm {{ ceph_pool_name }} {{ ceph_pool_name }} --yes-i-really-really-mean-it
+      ignore_errors: yes
+
+    - name: Stop Ceph services
+      systemd:
+        name: "{{ item }}"
+        state: stopped
+      with_items:
+        - ceph-mon@{{ inventory_hostname }}
+        - ceph-mgr@{{ inventory_hostname }}
+        - ceph-osd@*
+      ignore_errors: yes
+
+- hosts: all
+  tasks:
+    - name: Remove Incus packages
+      snap:
+        name: lxd
+        state: absent
+      ignore_errors: yes
+
+    - name: Remove Ceph packages
+      apt:
+        name:
+          - ceph
+          - ceph-common
+          - ceph-mgr
+        state: absent
+        purge: yes
+      when: inventory_hostname in groups['ceph_mon']
+
+    - name: Remove Ceph data directories
+      file:
+        path: "{{ item }}"
+        state: absent
+      with_items:
+        - /var/lib/ceph
+        - /etc/ceph
+        - /var/log/ceph
+      when: inventory_hostname in groups['ceph_mon']
+
+    - name: Clean OSD device
+      shell: wipefs -a {{ ceph_osd_device }}
+      when: inventory_hostname in groups['ceph_osd']

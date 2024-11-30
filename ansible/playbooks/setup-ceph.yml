@@ -1,0 +1,3 @@
+- hosts: incus_nodes
+  roles:
+    - ceph

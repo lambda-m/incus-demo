@@ -1,0 +1,20 @@
+- name: Create Ceph cluster
+  shell: |
+    ceph-deploy new {{ inventory_hostname }}
+    ceph-deploy mon create-initial
+    ceph-deploy mgr create {{ inventory_hostname }}
+    ceph-deploy osd create --data {{ ceph_osd_device }} {{ inventory_hostname }}
+    ceph auth get-or-create client.incus mon 'allow r' osd 'allow class-read object_prefix rbd_children, allow rwx pool={{ ceph_pool_name }}'
+  args:
+    creates: /etc/ceph/ceph.conf
+  when: inventory_hostname in groups['ceph_mon']
+
+- name: Get Ceph admin key
+  slurp:
+    src: /etc/ceph/ceph.client.admin.keyring
+  register: ceph_key
+  when: inventory_hostname in groups['ceph_mon']
+
+- name: Set fact for Ceph key
+  set_fact:
+    ceph_admin_key: "{{ hostvars[groups['ceph_mon'][0]]['ceph_key']['content'] | b64decode }}"

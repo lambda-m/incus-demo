@@ -1,0 +1,2 @@
+ceph_pool_name: incus-pool
+ceph_osd_device: /dev/sdb

@@ -1,0 +1,4 @@
+ceph_pool_name: incus-pool
+ceph_osd_device: /dev/sdb
+incus_trust_password: "your-secure-password-here"
+ceph_min_disk_size_gb: 10

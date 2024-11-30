@@ -1,0 +1,14 @@
+- name: Configure Incus network
+  shell: |
+    incus network create incusbr0 \
+      ipv4.address=10.10.10.1/24 \
+      ipv4.nat=true \
+      ipv6.address=none
+  args:
+    creates: /var/lib/incus/networks/incusbr0
+  when: inventory_hostname == groups['incus_nodes'][0]
+
+- name: Configure cluster trust password
+  shell: |
+    incus config set core.trust_password "{{ incus_trust_password }}"
+  when: inventory_hostname == groups['incus_nodes'][0] 

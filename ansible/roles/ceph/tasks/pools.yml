@@ -1,0 +1,2 @@
+- name: Create Ceph pool
+  command: ceph osd pool create {{ ceph_pool_name }} 128

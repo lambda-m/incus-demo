@@ -1,0 +1,9 @@
+- name: Check if storage pool exists
+  command: incus storage list
+  register: storage_list
+  changed_when: false
+
+- name: Configure Ceph storage in Incus
+  command: >
+    incus storage create ceph-backend ceph --source {{ ceph_pool_name }}
+  when: "'ceph-backend' not in storage_list.stdout"

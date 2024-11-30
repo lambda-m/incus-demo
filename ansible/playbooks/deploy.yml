@@ -1,0 +1,22 @@
+- hosts: all
+  gather_facts: yes
+  roles:
+    - preflight
+
+- import_playbook: setup-ceph.yml
+
+- name: Verify Ceph Setup
+  hosts: ceph_mon
+  tasks:
+    - include_role:
+        name: ceph
+        tasks_from: healthcheck.yml
+
+- import_playbook: setup-incus.yml
+
+- name: Verify Incus Setup
+  hosts: incus_nodes
+  tasks:
+    - include_role:
+        name: incus
+        tasks_from: healthcheck.yml
